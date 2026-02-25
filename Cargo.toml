@@ -8,3 +8,4 @@ pqc-combo = "0.1.0"
 k256 = { version = "0.13.1", features = ["ecdsa"] }
 rand_core = { version = "0.6", features = ["std"] }
 sha2 = "0.10.8"
+hex = "0.4.3"
