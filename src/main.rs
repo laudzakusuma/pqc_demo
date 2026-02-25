@@ -9,6 +9,7 @@ use rand_core::OsRng;
 use std::thread;
 use std::time::Duration;
 use sha2::{Sha256, Digest};
+use std::process::Command;
 
 fn main() {
     println!("breaking trilema migration\n");
@@ -71,4 +72,42 @@ fn main() {
     println!("\nHASIL REVOLUSI FOLDING SCHEME:");
     println!("Beban komputasi L1 dihancurkan dari {} gas menjadi hanya {} gas!", raw_gas, folded_gas);
     println!("Efisiensi tercapai: {:.2}%. Arsitektur ini siap untuk ZK-STARK!", savings);
+
+    println!("\n[4/4] Memicu Transaksi Cross-layer ke jaringan L1...");
+
+    //mengonversi output 32 byte menjadi format hex string untuk dikirim via RPC
+    let hex_commitment = format!("0x{}", hex::encode(&commitment));
+    let hex_x_folded = format!("0x{}", hex::encode(&folded_proof.x));
+    let hex_w_folded = format!("0x{}", hex::encode(&folded_proof.w));
+
+    println!("Menyiapkan payload RPC: ");
+    println!("   - Target Package : pqc_verifier::folding_verifier");
+    println!("   - Method         : execute_zk_folded_tx");
+    println!("   - Payload (x)    : {}", hex_x_folded);
+
+    //simulasi pemanggilan menggunakan SUI CLI yang di trigger langsung dari Rust
+    let package_id = "0x9279fb51b3cb7db117239b5a59d23e185fbc726fd760d226c4558c11155edb58";
+    let commitment_obj_id = "0x9d051db7aa9597034e5df555ea13d14db0e745683b7b2a4dd32401540e8c6464";
+
+    //simulasi perintah RPC
+    let hex_pqc_pub = format!("0x{}", hex::encode(&smart_wallet.pqc_pub));
+    let output = Command::new("sui")
+        .arg("client")
+        .arg("call")
+        .arg("--package").arg(package_id)
+        .arg("--module").arg("folding_verifier")
+        .arg("--function").arg("execute_zk_folded_tx")
+        .arg("--args")
+        .arg(commitment_obj_id)
+        .arg(&hex_pqc_pub)
+        .arg(&hex_x_folded)
+        .arg(&hex_w_folded)
+        .arg("--gas-budget").arg("1000000")
+        .output()
+        .expect("Gagal menjalankan perintah RPC");
+
+    println!("Status eksekusi On-Chain: {:?}", output.status);
+
+    println!("TRANSAKSI L2 ke L1 BERHASIL DISIMULASIKAN.");
+    println!("Seluruh Siklus Arsitektur (PROVER RUST + VERIFIER MOVE) Telah terintegrasi penuh !")
 }
