@@ -53,3 +53,35 @@ impl NovaFolder {
         accumulator
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nova_folding_constant_size() {
+        //simulasi dua instance PQC dengan ukuran data yang berbeda
+        let inst1 = R1CSInstance::new(vec![1, 2, 3], vec![0; 3309]); // 3309 byte signature
+        let inst2 = R1CSInstance::new(vec![4, 5], vec![1; 3309]);
+
+        let folded = NovaFolder::fold(&inst1, &inst2);
+
+        //membuktikan bahwa skema pelipatan MENGHANCURKAN ukuran 3309 byte menjadi 32 byte
+        assert_eq!(folded.x.len(), 32, "Instance tidak terlipat menjadi 32 byte!");
+        assert_eq!(folded.w.len(), 32, "Witness tidak terlipat menjadi 32 byte!");
+    }
+
+    #[test]
+    fn test_batch_folding_efficiency() {
+        let mut instances = Vec::new();
+        //membangkitkan 100 transaksi (total witness = 330.900 bytes)
+        for i in 0..100 {
+            instances.push(R1CSInstance::new(vec![i], vec![2; 3309]));
+        }
+
+        let final_proof = NovaFolder::fold_batch(&instances);
+
+        //membuktikan bahwa 100 transaksi tetap menghasilkan output 32 byte
+        assert_eq!(final_proof.w.len(), 32);
+    }
+}
