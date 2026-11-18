@@ -2,20 +2,28 @@
 
 Repositori ini berisi implementasi *Proof-of-Concept* (PoC) dalam bahasa **Rust** dan **Sui Move 2024** yang disejajarkan dengan parameter empiris dan formal **AQMP v2.0 (Adaptive Quantum Migration Protocol)** untuk memecahkan **Trilema Migrasi Kriptografi Pasca-Kuantum** (Keamanan Kuantum, Skalabilitas, dan Kompatibilitas).
 
+## Published Research Trilogy & Zenodo DOIs
+
+**Author:** Laudza Kusuma (Independent Researcher)
+
+1. **Paper #1 (AQMP v2.0 Core Protocol & QROM Proofs):** [https://doi.org/10.5281/zenodo.24303569](https://doi.org/10.5281/zenodo.24303569) (Concept DOI: `10.5281/zenodo.18993494`)
+2. **Paper #2 (Stateless PQ-MPC & 676B Knowledge-Asymmetry UTXO Rescue):** [https://doi.org/10.5281/zenodo.24341314](https://doi.org/10.5281/zenodo.24341314)
+3. **Paper #3 (AQMP-384 Classical Authentication for DI-QKD & Quantum Repeaters):** [https://doi.org/10.5281/zenodo.24343601](https://doi.org/10.5281/zenodo.24343601)
+
 ## Arsitektur AQMP v2.0 & Modul Inti
 
-### 1. Modul Wallet (`src/wallet.rs`) — Kompatibilitas & `KeyRegistry` 4-Byte Index
+### 1. Modul Wallet (`src/wallet.rs`): Kompatibilitas & `KeyRegistry` 4-Byte Index
 - **Mekanisme P2QRH**: Alamat dompet diturunkan dari SHA-256 gabungan kunci publik klasik (`secp256k1` ECDSA) dan pasca-kuantum (ML-DSA / FALCON-512), menutup celah *Downgrade Attack*.
 - **Dukungan AQMP v2.0**: Menyimpan indeks `KeyRegistry` 4-byte (`u32` big-endian) dan anchor awal Dual-Commit XOR 32-byte ($y_0$), memungkinkan pengurangan overhead per transaksi terindeks menjadi $40\text{ B (salt } R\text{)} + 4\text{ B (idx)} = 44\text{ B/tx}$.
 
-### 2. Modul Verifier (`src/verifier.rs`) — Dual-Commit XOR, QROM & Tenggat Fukuda ($\Delta^*$)
+### 2. Modul Verifier (`src/verifier.rs`): Dual-Commit XOR, QROM & Tenggat Fukuda ($\Delta^*$)
 - **Hash-Based Dual-Commit XOR**:
   - **256-bit Mode (ECDSA Parity):** Commit Tx1 $C = F_{\text{PRE}}(x) \oplus F_{\text{MSG}}(x \parallel m)$ ($32\text{ B}$) + Reveal/Rotate Tx2 $(x, y' = F_{\text{PRE}}(x'))$ ($64\text{ B}$) $= \mathbf{96\text{ B/tx}}$ (setara ECDSA $96\text{ B/tx}$).
   - **384-bit Domain-Separated Sponge Mode:** Menggunakan digest 384-bit ($48\text{ B} + 96\text{ B} = 144\text{ B/tx}$) dengan keamanan QROM formal $\ge \mathbf{187.00\text{ bits}}$ pada $q_F = 2^{64}$ (berdasarkan batas $\text{Adv}^{\text{EUF-CMA-QROM}}_{\text{AQMP-v2}}(\mathcal{A}) \le \frac{8(q_F+1)^2 + 32 q_F^3}{2^n}$).
 - **Fukuda Consensus Migration Deadline ($\Delta^*$):**
   - Menegakkan jendela konfirmasi minimum $\Delta_{\text{eff}} \ge \Delta^* = \lceil 4 / (1 - \epsilon) \rceil$ blok ($\Delta^* \in \{5, 6, 8, 16, 40\}$ untuk $\epsilon \in \{0.10, 0.25, 0.50, 0.75, 0.90\}$).
 
-### 3. Modul Aggregator (`src/aggregator.rs`) — APSE v2.0 Break-Even Routing
+### 3. Modul Aggregator (`src/aggregator.rs`): APSE v2.0 Break-Even Routing
 Menggantikan skor heuristik dengan model byte eksak dan switching deterministik dalam anggaran pembuktian **810 ms**:
 - **Plonky3 BabyBear (`300 + 44N` B):** Mengungguli FALCON Key-Recovery ($690N\text{ B}$) sejak $N^*_{\text{Plonky3}} = \mathbf{1}\text{ tx/block}$ dan mengungguli ECDSA ($96N\text{ B}$) sejak $N^*_{\text{ECDSA}} = \mathbf{6}\text{ tx/block}$ ($11,300\text{ B}$ vs $24,000\text{ B}$ ECDSA dan $1,315,250\text{ B}$ ML-DSA-65 pada $N = 250$).
 - **Fallback LaBRADOR Terindeks (jika budget 810 ms terlampaui):**
